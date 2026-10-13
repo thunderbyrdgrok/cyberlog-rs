@@ -40,9 +40,14 @@ Server logs and the app's browser profile live in `~/.local/state/cyberlog`.
 
 ## Windows
 
-1. Download `cyberlog-vX.Y.Z-windows-x64.zip` from [Releases](https://github.com/thunderbyrdgrok/cyberlog-rs/releases).
-2. Unzip it anywhere.
-3. Double-click `cyberlog.bat`. It starts the server and opens Cyberlog as an app window in Edge or Chrome, or in your default browser.
+1. Download `Cyberlog-Setup-vX.Y.Z.exe` from [Releases](https://github.com/thunderbyrdgrok/cyberlog-rs/releases).
+2. Run it. That's it: Cyberlog is installed in `Program Files\Cyberlog` with a Start menu shortcut and an optional desktop shortcut, and it shows up in Apps & Features to uninstall.
+
+The shortcut starts the local server in the background (no console window) and opens Cyberlog as an app window in Edge or Chrome, or in your default browser. Your entries live in the browser profile at `%LOCALAPPDATA%\cyberlog\profile`, which updates and uninstalls leave alone.
+
+The installer is unsigned, so Windows SmartScreen may say "Windows protected your PC". Click **More info**, then **Run anyway**.
+
+Prefer no install? Download `cyberlog-vX.Y.Z-windows-x64.zip`, unzip it, and double-click `cyberlog-launcher.exe` (or `cyberlog.bat`).
 
 To build from source, install Rust with [rustup](https://rustup.rs), then:
 

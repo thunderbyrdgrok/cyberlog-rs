@@ -1,6 +1,6 @@
 [package]
 name = "cyberlog"
-version = "1.0.0"
+version = "1.0.1"
 edition = "2021"
 description = "Local field journal. Rust server for the Cyberlog client."
 publish = false
@@ -8,3 +8,10 @@ publish = false
 [[bin]]
 name = "cyberlog"
 path = "src/main.rs"
+
+[[bin]]
+name = "cyberlog-launcher"
+path = "src/launcher.rs"
+
+[target.'cfg(windows)'.build-dependencies]
+embed-resource = "3"

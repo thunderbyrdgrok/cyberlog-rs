@@ -32,12 +32,29 @@ jobs:
           $name = "cyberlog-${{ github.ref_name }}-${{ matrix.target }}"
           New-Item -ItemType Directory -Path $name | Out-Null
           Copy-Item target/release/cyberlog.exe $name/
+          Copy-Item target/release/cyberlog-launcher.exe $name/
           Copy-Item bin/cyberlog.bat $name/
           Copy-Item -Recurse web $name/web
           Copy-Item -Recurse assets $name/assets
           Copy-Item README.md $name/
           Compress-Archive -Path $name -DestinationPath "$name.zip"
           "ASSET=$name.zip" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Build installer (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $iscc = (Get-Command iscc -ErrorAction SilentlyContinue).Source
+          if (-not $iscc) { $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" }
+          if (-not (Test-Path $iscc)) {
+            choco install innosetup -y --no-progress
+            $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          }
+          $version = "${{ github.ref_name }}".TrimStart("v")
+          & $iscc "/DAppVersion=$version" installer\cyberlog.iss
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Move-Item "dist\Cyberlog-Setup-v$version.exe" .
+          "SETUP=Cyberlog-Setup-v$version.exe" | Out-File -FilePath $env:GITHUB_ENV -Append
 
       - name: Package (Linux)
         if: runner.os == 'Linux'
@@ -53,7 +70,9 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.target }}
-          path: ${{ env.ASSET }}
+          path: |
+            ${{ env.ASSET }}
+            ${{ env.SETUP }}
 
   release:
     needs: build
