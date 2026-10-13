@@ -3,8 +3,17 @@ rem Open Cyberlog in its own window. Starts the local Rust server if it is not a
 setlocal EnableExtensions
 
 set "HERE=%~dp0"
-if defined CYBERLOG_PORT (set "PORT=%CYBERLOG_PORT%") else (set "PORT=47660")
+set "DEFPORT=47660"
 set "STATE=%LOCALAPPDATA%\cyberlog"
+rem Portable mode: portable.txt or a data folder next to this file keeps everything here.
+set "PORTABLE="
+if exist "%HERE%portable.txt" set "PORTABLE=1"
+if exist "%HERE%data\" set "PORTABLE=1"
+if defined PORTABLE (
+  set "DEFPORT=47661"
+  set "STATE=%HERE%data"
+)
+if defined CYBERLOG_PORT (set "PORT=%CYBERLOG_PORT%") else (set "PORT=%DEFPORT%")
 set "PROFILE=%STATE%\profile"
 if not exist "%PROFILE%" mkdir "%PROFILE%"
 

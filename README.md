@@ -47,7 +47,17 @@ The shortcut starts the local server in the background (no console window) and o
 
 The installer is unsigned, so Windows SmartScreen may say "Windows protected your PC". Click **More info**, then **Run anyway**.
 
-Prefer no install? Download `cyberlog-vX.Y.Z-windows-x64.zip`, unzip it, and double-click `cyberlog-launcher.exe` (or `cyberlog.bat`).
+### Portable (USB stick)
+
+Prefer no install, or want Cyberlog to travel on a USB stick? Download `cyberlog-vX.Y.Z-windows-x64.zip`, unzip it onto the drive, and double-click **`Start Cyberlog.exe`**.
+
+The zip ships with a `portable.txt` marker. When `portable.txt` or a `data` folder sits next to the launcher, Cyberlog runs in portable mode:
+
+- Journal entries (the browser profile) live in `data\profile` and the server log in `data\server.log`, both next to the launcher, so they move with the drive.
+- The default port is `47661`, so a portable copy never shares a server or data with an installed copy on `47660`. Keep the port the same between runs (`CYBERLOG_PORT` overrides it): the browser keys stored entries by address, port included.
+- When you close the Cyberlog window, the launcher stops the server it started, so you can eject the drive. If the server was already running (for example, you opened a second window), it is left alone; close all Cyberlog windows and quit `cyberlog.exe` in Task Manager if it lingers. `cyberlog.bat` also uses portable mode but does not stop its server.
+
+FAT32 and exFAT drives work, but browser profiles write many small files, so a slow stick makes Cyberlog sluggish and wears the drive. Always close Cyberlog and use **Safely Remove Hardware** before unplugging, or recent entries may be lost.
 
 To build from source, install Rust with [rustup](https://rustup.rs), then:
 

@@ -32,7 +32,8 @@ jobs:
           $name = "cyberlog-${{ github.ref_name }}-${{ matrix.target }}"
           New-Item -ItemType Directory -Path $name | Out-Null
           Copy-Item target/release/cyberlog.exe $name/
-          Copy-Item target/release/cyberlog-launcher.exe $name/
+          Copy-Item target/release/cyberlog-launcher.exe "$name/Start Cyberlog.exe"
+          Set-Content -Path "$name/portable.txt" -Value "Portable mode: Cyberlog keeps its journal data and logs in the data folder next to this file. Double-click 'Start Cyberlog.exe'. Delete this file and the data folder to use %LOCALAPPDATA%\cyberlog instead."
           Copy-Item bin/cyberlog.bat $name/
           Copy-Item -Recurse web $name/web
           Copy-Item -Recurse assets $name/assets
