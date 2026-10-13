@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Cyberlog
+GenericName=Journal
+Comment=Futuristic journal for text and video logs
+Exec=/home/waterwalker/Work/cyberlog-rs/bin/cyberlog
+Icon=/home/waterwalker/Work/cyberlog-rs/assets/icon-256.png
+StartupWMClass=cyberlog
+Terminal=false
+Categories=Office;Utility;
+Keywords=journal;log;diary;notes;cyberlog;

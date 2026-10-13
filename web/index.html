@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <title>Cyberlog</title>
+  <script>
+    try {
+      document.documentElement.dataset.theme =
+        localStorage.getItem("cyberlog-theme") === "light" ? "light" : "dark";
+    } catch (error) {
+      document.documentElement.dataset.theme = "dark";
+    }
+  </script>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="atmosphere" aria-hidden="true"></div>
+  <section id="view-dashboard">
+    <header class="topbar">
+      <div class="brand">
+        <svg class="mark" viewBox="0 0 48 48" aria-hidden="true">
+          <path d="M24 4 42 14.5v19L24 44 6 33.5v-19Z"/>
+          <circle cx="24" cy="23" r="4.5"/>
+        </svg>
+        <div>
+          <p class="kicker">FIELD JOURNAL</p>
+          <h1>CYBERLOG<span class="cursor" aria-hidden="true"></span></h1>
+        </div>
+      </div>
+      <div class="top-meta">
+        <div class="theme-switch" role="group" aria-label="Theme">
+          <button type="button" data-theme-choice="light">Light</button>
+          <button type="button" data-theme-choice="dark" aria-pressed="true">Dark</button>
+        </div>
+        <p class="meta-label">LOCAL TIME</p>
+        <time id="dash-clock">——</time>
+        <p class="meta-count"><span id="entry-count">00</span> LOGS</p>
+      </div>
+    </header>
+    <main class="dash-main">
+      <div class="dash-column">
+        <button id="new-entry" class="new-entry" type="button">+ &nbsp; NEW LOG ENTRY</button>
+        <div id="entry-head" class="entry-head" hidden>
+          <span>TYPE</span>
+          <span>DATE</span>
+          <span>TIME</span>
+          <span>SUBJECT</span>
+        </div>
+        <div id="entry-list" class="entry-list" role="list"></div>
+        <div id="empty-state" class="empty-state">
+          <p class="empty-kicker">ARCHIVE CLEAR</p>
+          <p>No logs yet. Open a new log entry to begin.</p>
+        </div>
+        <footer class="dash-foot">STORED IN THE CYBERLOG APP ON THIS PC &nbsp;·&nbsp; CYBERLOG 1.0</footer>
+      </div>
+    </main>
+  </section>
+
+  <section id="view-editor" hidden>
+    <header class="editor-top">
+      <div class="editor-left">
+        <button id="record-btn" class="rec-btn" type="button" aria-label="Record video log">
+          <span class="rec-dot" aria-hidden="true"></span>
+        </button>
+        <div class="save-wrap">
+          <button id="save-btn" class="disk-btn" type="button" aria-haspopup="dialog" aria-controls="save-menu" aria-expanded="false" aria-label="Save log">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4.5 3.5h10.2L19.5 8.2V20.5h-15Z"/>
+              <path d="M8 3.5V8h6.5"/>
+              <path d="M7.5 13.5h9V20.5h-9Z"/>
+              <path d="M9.5 13.5v3h5"/>
+            </svg>
+          </button>
+          <form id="save-menu" class="save-menu" hidden>
+            <label for="subject-input">SUBJECT TITLE</label>
+            <p class="hint">Optional. Shown with this log on the dashboard.</p>
+            <input id="subject-input" name="subject" type="text" maxlength="80" autocomplete="off" placeholder="Optional subject" spellcheck="true">
+            <button id="confirm-save" class="btn btn-primary" type="submit">SAVE LOG</button>
+            <p class="hint">CTRL S</p>
+            <button id="delete-log" class="btn btn-ghost danger" type="button">DELETE LOG</button>
+          </form>
+        </div>
+      </div>
+      <div class="editor-center">
+        <p class="kicker">CYBERLOG</p>
+        <p class="editor-line">
+          <span id="entry-kind" class="kind kind-text">TEXT</span>
+          <span id="entry-subject-label">NO SUBJECT</span>
+        </p>
+        <p id="entry-when" class="editor-when">LOG &nbsp;——</p>
+      </div>
+      <div class="editor-right">
+        <div class="theme-switch" role="group" aria-label="Theme">
+          <button type="button" data-theme-choice="light">Light</button>
+          <button type="button" data-theme-choice="dark" aria-pressed="true">Dark</button>
+        </div>
+        <p class="meta-label">NOW</p>
+        <time id="editor-clock">——</time>
+        <button id="back-btn" class="btn btn-primary" type="button">DASHBOARD</button>
+      </div>
+    </header>
+    <div id="editor-body" class="editor-body">
+      <nav class="rail" aria-label="Log attachments">
+        <p class="rail-label">LOG TOOLS</p>
+        <button id="env-btn" class="rail-btn" type="button" aria-expanded="false">
+          <span class="idx" aria-hidden="true">01</span>
+          <span>ENVIRONMENT DATA</span>
+        </button>
+        <button id="audio-btn" class="rail-btn" type="button" aria-expanded="false">
+          <span class="idx" aria-hidden="true">02</span>
+          <span>AUDIO</span>
+        </button>
+        <button id="photo-btn" class="rail-btn" type="button" aria-expanded="false">
+          <span class="idx" aria-hidden="true">03</span>
+          <span>PHOTO</span>
+        </button>
+      </nav>
+      <aside id="dock" class="dock" hidden>
+        <section id="panel-env" hidden>
+          <header class="dock-head">
+            <h2>ENVIRONMENT DATA</h2>
+            <button id="close-env" class="icon-x" type="button" aria-label="Close environment data">×</button>
+          </header>
+          <p class="dock-lead">Include readings from this PC. GPS, weather, and elevation use the location sensor when it is enabled. Time uses the system clock.</p>
+          <label class="check-row"><input id="opt-gps" type="checkbox" checked> GPS coordinates</label>
+          <label class="check-row"><input id="opt-weather" type="checkbox" checked> Local weather</label>
+          <label class="check-row"><input id="opt-elevation" type="checkbox" checked> Elevation</label>
+          <label class="check-row"><input id="opt-time" type="checkbox" checked> Time log entry was made</label>
+          <div class="dock-actions">
+            <button id="acquire-btn" class="btn btn-primary" type="button">ACQUIRE</button>
+            <button id="clear-env" class="btn btn-ghost" type="button">CLEAR</button>
+          </div>
+          <p id="env-status" class="sensor-status">Location is read only when you acquire GPS, weather, or elevation.</p>
+          <div id="env-readout" class="readout"></div>
+        </section>
+        <section id="panel-audio" hidden>
+          <header class="dock-head">
+            <h2>AUDIO</h2>
+            <button id="close-audio" class="icon-x" type="button" aria-label="Close audio">×</button>
+          </header>
+          <p class="dock-lead">Upload an audio file to attach it to this log.</p>
+          <label class="file-btn">
+            CHOOSE AUDIO FILE
+            <input id="audio-file" type="file" accept="audio/*,.mp3,.wav,.ogg,.m4a,.flac,.aac,.webm,.opus">
+          </label>
+          <p id="audio-file-name" class="file-name">No audio file attached.</p>
+          <button id="audio-clear" class="btn btn-ghost" type="button" hidden>REMOVE AUDIO</button>
+        </section>
+        <section id="panel-photo" hidden>
+          <header class="dock-head">
+            <h2>PHOTO</h2>
+            <button id="close-photo" class="icon-x" type="button" aria-label="Close photos">×</button>
+          </header>
+          <p class="dock-lead">Upload images to attach them to this log.</p>
+          <label class="file-btn">
+            CHOOSE IMAGES
+            <input id="photo-file" type="file" accept="image/png,image/jpeg,image/gif,image/webp,image/bmp,.png,.jpg,.jpeg,.gif,.webp,.bmp" multiple>
+          </label>
+          <div id="photo-grid" class="photo-grid"></div>
+          <p id="photo-empty" class="file-name">No images attached.</p>
+        </section>
+      </aside>
+      <div class="writer">
+        <div id="toolkit" class="toolkit" role="toolbar" aria-label="Writing toolkit"></div>
+        <div id="env-strip" class="env-strip" hidden></div>
+        <div id="log-body" class="log-body is-empty" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Log text" spellcheck="true"></div>
+        <div id="media-strip" class="media-strip" hidden></div>
+        <footer class="writer-foot">
+          <span id="word-count">0 WORDS</span>
+          <span id="char-count">0 CHARACTERS</span>
+          <span>LOCAL ARCHIVE</span>
+        </footer>
+      </div>
+    </div>
+  </section>
+
+  <div id="record-modal" class="modal" hidden>
+    <div class="modal-card record-card" role="dialog" aria-modal="true" aria-labelledby="record-title">
+      <header class="dock-head">
+        <h2 id="record-title">VIDEO LOG</h2>
+        <button id="record-close" class="icon-x" type="button" aria-label="Close video log">×</button>
+      </header>
+      <p id="record-lead" class="dock-lead">Open the webcam to record a video log entry.</p>
+      <div class="viewfinder">
+        <video id="live-video" autoplay muted playsinline></video>
+        <video id="review-video" playsinline controls hidden></video>
+        <p id="viewfinder-standby">WEBCAM STANDBY</p>
+        <div id="rec-indicator" hidden><span class="rec-dot" aria-hidden="true"></span> REC <span id="rec-timer">00:00</span></div>
+      </div>
+      <p id="record-error" class="sensor-status is-bad" hidden></p>
+      <div class="modal-actions">
+        <button id="open-webcam" class="btn btn-primary" type="button">OPEN WEBCAM</button>
+        <button id="start-record" class="btn btn-danger" type="button" hidden>START RECORDING</button>
+        <button id="stop-record" class="btn btn-danger" type="button" hidden>STOP</button>
+        <button id="attach-video" class="btn btn-primary" type="button" hidden>ATTACH TO LOG</button>
+        <button id="retake-video" class="btn btn-ghost" type="button" hidden>RETAKE</button>
+        <button id="discard-take" class="btn btn-ghost danger" type="button" hidden>DISCARD</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="confirm-modal" class="modal" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+      <h2 id="confirm-title"></h2>
+      <p id="confirm-body"></p>
+      <div class="modal-actions">
+        <button id="confirm-cancel" class="btn btn-ghost" type="button"></button>
+        <button id="confirm-ok" class="btn btn-danger" type="button"></button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

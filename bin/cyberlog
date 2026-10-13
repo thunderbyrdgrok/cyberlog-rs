@@ -1,0 +1,93 @@
+#!/usr/bin/env bash
+# Open Cyberlog in its own window. Starts the local Rust server if it is not already up.
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
+PORT="${CYBERLOG_PORT:-47660}"
+STATE="${XDG_STATE_HOME:-$HOME/.local/state}/cyberlog"
+PROFILE="$STATE/profile"
+BIN="$ROOT/target/release/cyberlog"
+mkdir -p "$PROFILE"
+
+needs_build=0
+if [[ ! -x "$BIN" ]]; then
+  needs_build=1
+fi
+for src in "$ROOT/Cargo.toml" "$ROOT/Cargo.lock" "$ROOT/src/main.rs" "$ROOT/src/lib.rs" "$ROOT/src/server.rs"; do
+  if [[ -f "$src" && "$src" -nt "$BIN" ]]; then
+    needs_build=1
+  fi
+done
+if [[ "$needs_build" == 1 ]]; then
+  if ! command -v cargo >/dev/null 2>&1; then
+    echo "Cyberlog needs Rust. Install cargo, then run: cargo build --release" >&2
+    echo "Build it in $ROOT." >&2
+    exit 1
+  fi
+  cargo build --release --manifest-path "$ROOT/Cargo.toml"
+fi
+
+health() {
+  "$BIN" --ping --port "$PORT"
+}
+
+start_server() {
+  if command -v setsid >/dev/null 2>&1; then
+    setsid "$BIN" --port "$PORT" >>"$STATE/server.log" 2>&1 &
+  else
+    nohup "$BIN" --port "$PORT" >>"$STATE/server.log" 2>&1 &
+  fi
+}
+
+if ! health; then
+  start_server
+  for _ in $(seq 1 50); do
+    if health; then
+      break
+    fi
+    sleep 0.1
+  done
+fi
+
+if ! health; then
+  echo "Cyberlog did not start. See $STATE/server.log" >&2
+  exit 1
+fi
+
+if [[ "${1:-}" == "--no-open" ]]; then
+  exit 0
+fi
+
+URL="http://127.0.0.1:${PORT}/"
+browser=""
+for candidate in chromium chromium-browser google-chrome google-chrome-stable microsoft-edge brave-browser vivaldi; do
+  if command -v "$candidate" >/dev/null 2>&1; then
+    browser="$(command -v "$candidate")"
+    break
+  fi
+done
+
+if [[ -z "$browser" ]]; then
+  if command -v xdg-open >/dev/null 2>&1; then
+    exec xdg-open "$URL"
+  fi
+  echo "Open $URL in a browser. Install Chromium for the app window." >&2
+  exit 0
+fi
+
+flags=(
+  --app="$URL"
+  --class=cyberlog
+  --user-data-dir="$PROFILE"
+  --no-first-run
+  --no-default-browser-check
+  --disable-sync
+)
+
+if command -v uwsm-app >/dev/null 2>&1 && command -v setsid >/dev/null 2>&1; then
+  exec setsid uwsm-app -- "$browser" "${flags[@]}"
+fi
+if command -v setsid >/dev/null 2>&1; then
+  exec setsid "$browser" "${flags[@]}"
+fi
+exec "$browser" "${flags[@]}"

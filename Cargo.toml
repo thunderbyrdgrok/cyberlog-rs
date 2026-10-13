@@ -1,0 +1,10 @@
+[package]
+name = "cyberlog"
+version = "1.0.0"
+edition = "2021"
+description = "Local field journal. Rust server for the Cyberlog client."
+publish = false
+
+[[bin]]
+name = "cyberlog"
+path = "src/main.rs"
