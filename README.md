@@ -38,6 +38,22 @@ cargo run --release -- [--port PORT] [--web DIR] [--ping]
 
 Server logs and the app's browser profile live in `~/.local/state/cyberlog`.
 
+## Windows
+
+1. Download `cyberlog-vX.Y.Z-windows-x64.zip` from [Releases](https://github.com/thunderbyrdgrok/cyberlog-rs/releases).
+2. Unzip it anywhere.
+3. Double-click `cyberlog.bat`. It starts the server and opens Cyberlog as an app window in Edge or Chrome, or in your default browser.
+
+To build from source, install Rust with [rustup](https://rustup.rs), then:
+
+```bat
+git clone https://github.com/thunderbyrdgrok/cyberlog-rs
+cd cyberlog-rs
+cargo run --release
+```
+
+Or double-click `bin\cyberlog.bat` in the clone; it builds the release binary on the first run. The launcher honors `CYBERLOG_PORT`, and keeps its log and browser profile in `%LOCALAPPDATA%\cyberlog`.
+
 ## Desktop entry
 
 `cyberlog.desktop` adds Cyberlog to your app launcher. Edit its `Exec` and `Icon` paths to match where you cloned the repo, then copy it to `~/.local/share/applications/`.

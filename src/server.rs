@@ -75,8 +75,7 @@ pub fn locate_web() -> Option<PathBuf> {
     let exe = std::env::current_exe().ok()?;
     let mut dir = exe.parent()?.to_path_buf();
     for _ in 0..6 {
-        let index = dir.join("web/index.html");
-        if index.is_file() {
+        if dir.join("web").join("index.html").is_file() {
             return Some(dir.join("web"));
         }
         if !dir.pop() {
@@ -587,7 +586,9 @@ fn normalize_segments(decoded: &str) -> Vec<String> {
             parts.pop();
             continue;
         }
-        if segment.contains('\0') {
+        // Windows treats `\` and `C:` as path syntax, so a segment holding
+        // them could escape the web root when pushed onto a PathBuf.
+        if segment.contains('\0') || (cfg!(windows) && segment.contains(['\\', ':'])) {
             continue;
         }
         parts.push(segment.to_string());
