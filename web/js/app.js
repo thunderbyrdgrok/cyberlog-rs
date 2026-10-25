@@ -48,6 +48,7 @@ const els = {
   audioFile: document.getElementById("audio-file"),
   audioName: document.getElementById("audio-file-name"),
   audioClear: document.getElementById("audio-clear"),
+  audioRecordBtn: document.getElementById("audio-record-btn"),
   photoFile: document.getElementById("photo-file"),
   photoGrid: document.getElementById("photo-grid"),
   photoEmpty: document.getElementById("photo-empty"),
@@ -74,6 +75,32 @@ const els = {
   confirmOk: document.getElementById("confirm-ok"),
   confirmCancel: document.getElementById("confirm-cancel"),
   toast: document.getElementById("toast"),
+  videoPlayer: document.getElementById("video-player"),
+  popupVideo: document.getElementById("popup-video"),
+  popupPlay: document.getElementById("popup-play"),
+  popupPause: document.getElementById("popup-pause"),
+  popupVolume: document.getElementById("popup-volume"),
+  popupClose: document.getElementById("popup-close"),
+  popupProgressBar: document.getElementById("popup-progress"),
+  popupCurrentTime: document.getElementById("popup-current-time"),
+  popupDuration: document.getElementById("popup-duration"),
+  audioPlayer: document.getElementById("audio-player"),
+  popupAudio: document.getElementById("popup-audio"),
+  popupAudioPlay: document.getElementById("popup-audio-play"),
+  popupAudioPause: document.getElementById("popup-audio-pause"),
+  popupAudioVolume: document.getElementById("popup-audio-volume"),
+  popupAudioClose: document.getElementById("popup-audio-close"),
+  popupAudioProgress: document.getElementById("popup-audio-progress"),
+  popupAudioCurrent: document.getElementById("popup-audio-current"),
+  popupAudioDuration: document.getElementById("popup-audio-duration"),
+  audioRecorder: document.getElementById("audio-recorder"),
+  recorderToggle: document.getElementById("recorder-toggle"),
+  recorderSave: document.getElementById("recorder-save"),
+  recorderClose: document.getElementById("audio-recorder-close"),
+  recorderViz: document.getElementById("recorder-viz"),
+  recorderTrack: document.getElementById("recorder-track"),
+  recorderAxis: document.getElementById("recorder-axis"),
+  recorderTime: document.getElementById("recorder-time"),
 };
 
 const state = {
@@ -100,6 +127,318 @@ const state = {
 
 let confirmResolve = null;
 let toastTimer = 0;
+
+const videoPlayer = {
+  isMuted: false,
+  updateProgress() {
+    const video = els.popupVideo;
+    if (!video || !video.duration || !isFinite(video.duration)) return;
+    const percent = (video.currentTime / video.duration) * 100;
+    els.popupProgressBar.style.width = `${percent}%`;
+    els.popupCurrentTime.textContent = formatTime(video.currentTime);
+    els.popupDuration.textContent = formatTime(video.duration);
+  },
+  syncPlayPause() {
+    if (els.popupVideo.paused) {
+      els.popupPlay.hidden = false;
+      els.popupPause.hidden = true;
+    } else {
+      els.popupPlay.hidden = true;
+      els.popupPause.hidden = false;
+    }
+  },
+  syncVolume() {
+    els.popupVolume.textContent = videoPlayer.isMuted ? "🔇" : "🔊";
+    els.popupVolume.setAttribute("aria-label", videoPlayer.isMuted ? "Unmute" : "Mute");
+  },
+  open(url) {
+    const stripVideo = els.media.querySelector("video");
+    if (stripVideo) stripVideo.pause();
+    els.popupVideo.src = url;
+    els.popupVideo.hidden = false;
+    els.popupProgressBar.style.width = "0%";
+    els.popupCurrentTime.textContent = "0:00";
+    els.popupDuration.textContent = "0:00";
+    els.popupVideo.play();
+    videoPlayer.isMuted = false;
+    els.popupVideo.muted = false;
+    videoPlayer.syncVolume();
+    els.popupPlay.hidden = false;
+    els.popupPause.hidden = true;
+    els.videoPlayer.hidden = false;
+    els.popupVideo.focus();
+  },
+  close() {
+    els.popupVideo.pause();
+    els.popupVideo.src = "";
+    els.videoPlayer.hidden = true;
+  },
+};
+
+const audioPlayer = {
+  isMuted: false,
+  updateProgress() {
+    const audio = els.popupAudio;
+    if (!audio || !audio.duration || !isFinite(audio.duration)) return;
+    const percent = (audio.currentTime / audio.duration) * 100;
+    els.popupAudioProgress.style.width = `${percent}%`;
+    els.popupAudioCurrent.textContent = formatTime(audio.currentTime);
+    els.popupAudioDuration.textContent = formatTime(audio.duration);
+  },
+  syncPlayPause() {
+    if (els.popupAudio.paused) {
+      els.popupAudioPlay.hidden = false;
+      els.popupAudioPause.hidden = true;
+    } else {
+      els.popupAudioPlay.hidden = true;
+      els.popupAudioPause.hidden = false;
+    }
+  },
+  syncVolume() {
+    els.popupAudioVolume.textContent = audioPlayer.isMuted ? "🔇" : "🔊";
+    els.popupAudioVolume.setAttribute("aria-label", audioPlayer.isMuted ? "Unmute" : "Mute");
+  },
+  open(url) {
+    const stripAudio = els.media.querySelector("audio");
+    if (stripAudio) stripAudio.pause();
+    els.popupAudio.src = url;
+    els.popupAudio.hidden = false;
+    els.popupAudioProgress.style.width = "0%";
+    els.popupAudioCurrent.textContent = "0:00";
+    els.popupAudioDuration.textContent = "0:00";
+    els.popupAudio.play();
+    audioPlayer.isMuted = false;
+    els.popupAudio.muted = false;
+    audioPlayer.syncVolume();
+    els.popupAudioPlay.hidden = false;
+    els.popupAudioPause.hidden = true;
+    els.audioPlayer.hidden = false;
+    els.popupAudio.focus();
+  },
+  close() {
+    els.popupAudio.pause();
+    els.popupAudio.src = "";
+    els.audioPlayer.hidden = true;
+  },
+};
+
+const audioRecorder = {
+  stream: null,
+  chunks: [],
+  recorder: null,
+  analyser: null,
+  source: null,
+  audioCtx: null,
+  duration: 0,
+  timer: null,
+  recording: false,
+  paused: false,
+  canvas: null,
+  ctx: null,
+  async open() {
+    els.recorderToggle.className = "recorder-btn recorder-btn-ready";
+    els.recorderToggle.querySelector(".recorder-btn-label").textContent = "START RECORDING";
+    els.recorderTrack.style.width = "0%";
+    els.recorderTime.textContent = "0:00 / 0:00";
+    els.recorderSave.hidden = false;
+    els.audioRecorder.hidden = false;
+    await audioRecorder.initViz();
+  },
+  async initViz() {
+    audioRecorder.canvas = els.recorderViz;
+    audioRecorder.ctx = audioRecorder.canvas.getContext("2d", { willReadFrequently: true });
+    const w = audioRecorder.canvas.width;
+    const h = audioRecorder.canvas.height;
+    audioRecorder.ctx.fillStyle = "#000";
+    audioRecorder.ctx.fillRect(0, 0, w, h);
+  },
+  async start() {
+    // Resume a paused take instead of starting over (keeps earlier audio).
+    if (audioRecorder.recorder && audioRecorder.recorder.state === "paused") {
+      audioRecorder.recorder.resume();
+      audioRecorder.recording = true;
+      audioRecorder.paused = false;
+      els.recorderToggle.className = "recorder-btn recording";
+      els.recorderToggle.querySelector(".recorder-btn-label").textContent = "PAUSE";
+      els.recorderSave.hidden = true;
+      audioRecorder.startTimer();
+      audioRecorder.startViz();
+      return;
+    }
+    try {
+      audioRecorder.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioRecorder.chunks = [];
+      audioRecorder.recording = true;
+      audioRecorder.paused = false;
+      audioRecorder.duration = 0;
+      els.recorderToggle.className = "recorder-btn recording";
+      els.recorderToggle.querySelector(".recorder-btn-label").textContent = "PAUSE";
+      els.recorderSave.hidden = true;
+      audioRecorder.startTimer();
+      audioRecorder.startViz();
+      const mimeType = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : undefined;
+      audioRecorder.recorder = new MediaRecorder(audioRecorder.stream, mimeType ? { mimeType } : undefined);
+      audioRecorder.recorder.ondataavailable = (event) => {
+        if (event.data && event.data.size > 0) audioRecorder.chunks.push(event.data);
+      };
+      audioRecorder.recorder.start(200);
+    } catch (error) {
+      toast("MICROPHONE ACCESS WAS DENIED");
+      audioRecorder.close();
+    }
+  },
+  stopRecording() {
+    // Pause only; the mic and recorder stay open so START resumes the same take.
+    audioRecorder.recording = false;
+    audioRecorder.paused = true;
+    if (audioRecorder.recorder && audioRecorder.recorder.state === "recording") {
+      audioRecorder.recorder.pause();
+    }
+    if (audioRecorder.startTime) {
+      audioRecorder.duration += (Date.now() - audioRecorder.startTime) / 1000;
+      audioRecorder.startTime = 0;
+    }
+    clearInterval(audioRecorder.timer);
+    if (audioRecorder.source) audioRecorder.source.disconnect();
+    if (audioRecorder.analyser) audioRecorder.analyser.disconnect();
+    if (audioRecorder.audioCtx) audioRecorder.audioCtx.close();
+    audioRecorder.source = null;
+    audioRecorder.analyser = null;
+    audioRecorder.audioCtx = null;
+    els.recorderToggle.className = "recorder-btn paused";
+    els.recorderToggle.querySelector(".recorder-btn-label").textContent = "RESUME RECORDING";
+    els.recorderSave.hidden = false;
+    audioRecorder.stopViz();
+  },
+  startTimer() {
+    audioRecorder.startTime = Date.now();
+    clearInterval(audioRecorder.timer);
+    audioRecorder.timer = setInterval(() => {
+      const elapsed = audioRecorder.duration + (Date.now() - audioRecorder.startTime) / 1000;
+      els.recorderTrack.style.width = "100%";
+      els.recorderTime.textContent = `${formatTime(elapsed)} / ${formatTime(elapsed)}`;
+    }, 100);
+  },
+  startViz() {
+    if (!audioRecorder.stream) return;
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      audioRecorder.audioCtx = ctx;
+      audioRecorder.analyser = ctx.createAnalyser();
+      audioRecorder.analyser.fftSize = 256;
+      audioRecorder.source = ctx.createMediaStreamSource(audioRecorder.stream);
+      audioRecorder.source.connect(audioRecorder.analyser);
+      audioRecorder.drawViz();
+    } catch {
+      audioRecorder.drawDummy();
+    }
+  },
+  drawViz() {
+    if (!audioRecorder.recording) return;
+    const canvas = audioRecorder.canvas;
+    const ctx = audioRecorder.ctx;
+    if (!canvas || !ctx || !audioRecorder.analyser) {
+      audioRecorder.drawDummy();
+      return;
+    }
+    const data = new Uint8Array(audioRecorder.analyser.frequencyBinCount);
+    audioRecorder.analyser.getByteFrequencyData(data);
+    const w = canvas.width;
+    const h = canvas.height;
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0, 0, w, h);
+    const barWidth = w / data.length;
+    for (let i = 0; i < data.length; i++) {
+      const barHeight = (data[i] / 255) * h;
+      ctx.fillStyle = data[i] > 200 ? "#ff2a33" : data[i] > 100 ? "#ffc14a" : "#3df0ff";
+      ctx.fillRect(i * barWidth, h - barHeight, barWidth - 1, barHeight);
+    }
+    audioRecorder.vizFrame = requestAnimationFrame(() => audioRecorder.drawViz());
+  },
+  drawDummy() {
+    if (!audioRecorder.recording) return;
+    const canvas = audioRecorder.canvas;
+    const ctx = audioRecorder.ctx;
+    if (!canvas || !ctx) return;
+    const w = canvas.width;
+    const h = canvas.height;
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0, 0, w, h);
+    const now = Date.now() / 200;
+    const barCount = 32;
+    for (let i = 0; i < barCount; i++) {
+      const barHeight = Math.abs(Math.sin(now + i * 0.3) * 0.4 + 0.5) * h * 0.6;
+      ctx.fillStyle = i % 3 === 0 ? "#3df0ff" : i % 3 === 1 ? "#ff3d9a" : "#ffc14a";
+      ctx.fillRect(i * (w / barCount), h - barHeight, w / barCount - 2, barHeight);
+    }
+    audioRecorder.vizFrame = requestAnimationFrame(() => audioRecorder.drawDummy());
+  },
+  stopViz() {
+    if (audioRecorder.vizFrame) {
+      cancelAnimationFrame(audioRecorder.vizFrame);
+      audioRecorder.vizFrame = null;
+    }
+    const canvas = audioRecorder.canvas;
+    const ctx = audioRecorder.ctx;
+    if (canvas && ctx) {
+      ctx.fillStyle = "#000";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+  },
+  async save() {
+    // Finish the recorder and wait for its last chunk before building the file.
+    const rec = audioRecorder.recorder;
+    if (rec && rec.state !== "inactive") {
+      els.recorderSave.disabled = true;
+      await new Promise((resolve) => {
+        rec.addEventListener("stop", resolve, { once: true });
+        rec.stop();
+      });
+      els.recorderSave.disabled = false;
+    }
+    if (!audioRecorder.chunks.length) {
+      toast("NO AUDIO WAS RECORDED");
+      return;
+    }
+    const type = (rec && rec.mimeType) || "audio/webm";
+    const blob = new Blob(audioRecorder.chunks, { type });
+    const file = new File([blob], "recording.webm", { type });
+    setAudio(file);
+    audioRecorder.close();
+  },
+  close() {
+    clearInterval(audioRecorder.timer);
+    audioRecorder.stopViz();
+    if (audioRecorder.recorder && audioRecorder.recorder.state !== "inactive") {
+      audioRecorder.recorder.onstop = null;
+      audioRecorder.recorder.stop();
+    }
+    audioRecorder.recorder = null;
+    audioRecorder.recording = false;
+    audioRecorder.paused = false;
+    audioRecorder.chunks = [];
+    if (audioRecorder.source) audioRecorder.source.disconnect();
+    if (audioRecorder.analyser) audioRecorder.analyser.disconnect();
+    if (audioRecorder.audioCtx) audioRecorder.audioCtx.close();
+    if (audioRecorder.stream) {
+      audioRecorder.stream.getTracks().forEach((track) => track.stop());
+    }
+    audioRecorder.stream = null;
+    audioRecorder.audioCtx = null;
+    els.audioRecorder.hidden = true;
+    els.recorderToggle.className = "recorder-btn recorder-btn-ready";
+    els.recorderToggle.querySelector(".recorder-btn-label").textContent = "START RECORDING";
+    els.recorderTrack.style.width = "0%";
+    els.recorderTime.textContent = "0:00 / 0:00";
+    els.recorderSave.hidden = true;
+    const canvas = audioRecorder.canvas;
+    const ctx = audioRecorder.ctx;
+    if (canvas && ctx) {
+      ctx.fillStyle = "#000";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+  },
+};
 
 const editor = mountEditor({
   body: document.getElementById("log-body"),
@@ -327,7 +666,16 @@ function renderMedia() {
     const audio = document.createElement("audio");
     audio.controls = true;
     audio.src = draft.audio.url;
-    els.media.append(label, audio);
+    audio.addEventListener("click", (event) => {
+      event.preventDefault();
+      audioPlayer.open(draft.audio.url);
+    });
+    const openPlayer = document.createElement("button");
+    openPlayer.type = "button";
+    openPlayer.className = "btn btn-ghost btn-small";
+    openPlayer.textContent = "OPEN PLAYER";
+    openPlayer.addEventListener("click", () => audioPlayer.open(draft.audio.url));
+    els.media.append(label, audio, openPlayer);
   }
   if (draft?.photos?.length) {
     const label = document.createElement("p");
@@ -348,9 +696,20 @@ function renderMedia() {
     label.className = "media-label";
     label.textContent = "VIDEO";
     const video = document.createElement("video");
-    video.controls = true;
     video.src = draft.video.url;
-    els.media.append(label, video);
+    video.muted = true;
+    video.preload = "metadata";
+    video.addEventListener("loadedmetadata", () => {
+      video.currentTime = 0;
+      video.pause();
+    });
+    video.addEventListener("click", () => videoPlayer.open(draft.video.url));
+    const openPlayer = document.createElement("button");
+    openPlayer.type = "button";
+    openPlayer.className = "btn btn-ghost btn-small";
+    openPlayer.textContent = "OPEN PLAYER";
+    openPlayer.addEventListener("click", () => videoPlayer.open(draft.video.url));
+    els.media.append(label, video, openPlayer);
   }
   renderAudioName();
   renderPhotoGrid();
@@ -487,6 +846,9 @@ async function openEntry(id) {
     editor.setHtml(entry.html || "");
     syncToggles();
     enterEditor();
+    if (media.video) {
+      videoPlayer.open(media.video.url);
+    }
   } catch {
     toast("THE LOG COULD NOT BE OPENED");
   } finally {
@@ -531,6 +893,9 @@ async function saveLog() {
     state.highlightId = persistedId;
     closeSave();
     closeRecorder();
+    videoPlayer.close();
+    audioPlayer.close();
+    audioRecorder.close();
     releaseUrls(state.draft);
     state.draft = null;
     await refreshDashboard();
@@ -558,6 +923,9 @@ async function removeLog() {
   try {
     if (persisted) await deleteLog(state.draft.id);
     state.dirty = false;
+    videoPlayer.close();
+    audioPlayer.close();
+    audioRecorder.close();
     closeRecorder();
     releaseUrls(state.draft);
     state.draft = null;
@@ -581,6 +949,9 @@ async function backToDashboard() {
     if (!ok) return;
   }
   closeRecorder();
+  videoPlayer.close();
+  audioPlayer.close();
+  audioRecorder.close();
   releaseUrls(state.draft);
   state.draft = null;
   state.dirty = false;
@@ -971,6 +1342,98 @@ function requestCloseRecorder() {
   closeRecorder();
 }
 
+function formatTime(seconds) {
+  const s = Math.floor(seconds);
+  const m = Math.floor(s / 60);
+  const sec = s % 60;
+  if (m >= 60) {
+    const h = Math.floor(m / 60);
+    const mins = m % 60;
+    return `${h}:${String(mins).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+  }
+  return `${m}:${String(sec).padStart(2, "0")}`;
+}
+
+els.popupVideo.addEventListener("timeupdate", () => videoPlayer.updateProgress());
+els.popupVideo.addEventListener("loadedmetadata", () => videoPlayer.updateProgress());
+els.popupVideo.addEventListener("seeked", () => videoPlayer.updateProgress());
+els.popupVideo.addEventListener("play", () => videoPlayer.syncPlayPause());
+els.popupVideo.addEventListener("pause", () => videoPlayer.syncPlayPause());
+els.popupVideo.addEventListener("ended", () => {
+  videoPlayer.syncPlayPause();
+  videoPlayer.updateProgress();
+});
+
+els.popupProgress?.addEventListener("click", (event) => {
+  const video = els.popupVideo;
+  if (!video || !video.duration || !isFinite(video.duration)) return;
+  const rect = els.popupProgressBar.parentElement.getBoundingClientRect();
+  const x = event.clientX - rect.left;
+  const percent = x / rect.width;
+  video.currentTime = video.duration * percent;
+  videoPlayer.updateProgress();
+});
+
+els.popupPlay.addEventListener("click", () => els.popupVideo.play());
+els.popupPause.addEventListener("click", () => els.popupVideo.pause());
+els.popupVolume.addEventListener("click", () => {
+  videoPlayer.isMuted = !videoPlayer.isMuted;
+  els.popupVideo.muted = videoPlayer.isMuted;
+  videoPlayer.syncVolume();
+});
+els.popupClose.addEventListener("click", () => videoPlayer.close());
+
+els.videoPlayer.addEventListener("click", (event) => {
+  if (event.target === els.videoPlayer) {
+    videoPlayer.close();
+  }
+});
+els.popupVideo.addEventListener("click", (event) => {
+  if (event.target === els.popupVideo) {
+    if (els.popupVideo.paused) {
+      els.popupVideo.play();
+    } else {
+      els.popupVideo.pause();
+    }
+  }
+});
+
+els.popupAudio.addEventListener("timeupdate", () => audioPlayer.updateProgress());
+els.popupAudio.addEventListener("loadedmetadata", () => audioPlayer.updateProgress());
+els.popupAudio.addEventListener("seeked", () => audioPlayer.updateProgress());
+els.popupAudio.addEventListener("play", () => audioPlayer.syncPlayPause());
+els.popupAudio.addEventListener("pause", () => audioPlayer.syncPlayPause());
+els.popupAudio.addEventListener("ended", () => {
+  audioPlayer.syncPlayPause();
+  audioPlayer.updateProgress();
+});
+
+els.popupAudioPlay.addEventListener("click", () => els.popupAudio.play());
+els.popupAudioPause.addEventListener("click", () => els.popupAudio.pause());
+els.popupAudioVolume.addEventListener("click", () => {
+  audioPlayer.isMuted = !audioPlayer.isMuted;
+  els.popupAudio.muted = audioPlayer.isMuted;
+  audioPlayer.syncVolume();
+});
+els.popupAudioClose.addEventListener("click", () => audioPlayer.close());
+
+els.audioPlayer.addEventListener("click", (event) => {
+  if (event.target === els.audioPlayer) {
+    audioPlayer.close();
+  }
+});
+
+els.audioRecordBtn.addEventListener("click", () => audioRecorder.open());
+els.recorderToggle.addEventListener("click", () => {
+  if (audioRecorder.recording) {
+    audioRecorder.stopRecording();
+  } else {
+    audioRecorder.start();
+  }
+});
+els.recorderSave.addEventListener("click", () => audioRecorder.save());
+els.recorderClose.addEventListener("click", () => audioRecorder.close());
+
 document.getElementById("close-env").addEventListener("click", closeDock);
 document.getElementById("close-audio").addEventListener("click", closeDock);
 document.getElementById("close-photo").addEventListener("click", closeDock);
@@ -1029,6 +1492,18 @@ document.addEventListener("keydown", (event) => {
   if (event.key !== "Escape") return;
   if (confirmResolve) {
     settleConfirm(false);
+    return;
+  }
+  if (!els.videoPlayer.hidden) {
+    videoPlayer.close();
+    return;
+  }
+  if (!els.audioPlayer.hidden) {
+    audioPlayer.close();
+    return;
+  }
+  if (!els.audioRecorder.hidden) {
+    audioRecorder.close();
     return;
   }
   if (!els.recordModal.hidden) {

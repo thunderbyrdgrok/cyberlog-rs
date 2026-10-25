@@ -146,6 +146,9 @@
             CHOOSE AUDIO FILE
             <input id="audio-file" type="file" accept="audio/*,.mp3,.wav,.ogg,.m4a,.flac,.aac,.webm,.opus">
           </label>
+          <button id="audio-record-btn" class="btn btn-ghost btn-small" type="button" aria-label="Record audio">
+            ● RECORD AUDIO
+          </button>
           <p id="audio-file-name" class="file-name">No audio file attached.</p>
           <button id="audio-clear" class="btn btn-ghost" type="button" hidden>REMOVE AUDIO</button>
         </section>
@@ -209,6 +212,71 @@
       <div class="modal-actions">
         <button id="confirm-cancel" class="btn btn-ghost" type="button"></button>
         <button id="confirm-ok" class="btn btn-danger" type="button"></button>
+      </div>
+    </div>
+  </div>
+
+  <div id="video-player" class="video-player-overlay" role="dialog" aria-modal="true" aria-label="Video log player" tabindex="-1" hidden>
+    <div class="video-player-popup">
+      <video id="popup-video" playsinline></video>
+      <div class="video-player-controls" hidden>
+        <div class="video-player-bar">
+          <div class="video-player-time" id="popup-current-time">0:00</div>
+          <div class="video-player-progress">
+            <div class="video-player-fill" id="popup-progress"></div>
+          </div>
+          <div class="video-player-time" id="popup-duration">0:00</div>
+        </div>
+        <div class="video-player-buttons">
+          <button id="popup-play" class="video-player-btn" type="button" aria-label="Play">▶</button>
+          <button id="popup-pause" class="video-player-btn" type="button" aria-label="Pause" hidden>⏸</button>
+          <button id="popup-volume" class="video-player-btn" type="button" aria-label="Mute">🔊</button>
+          <button id="popup-close" class="video-player-btn video-player-close" type="button" aria-label="Close">✕</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="audio-player" class="video-player-overlay" role="dialog" aria-modal="true" aria-label="Audio log player" tabindex="-1" hidden>
+    <div class="video-player-popup">
+      <audio id="popup-audio" playsinline></audio>
+      <div class="video-player-controls" hidden>
+        <div class="video-player-bar">
+          <div class="video-player-time" id="popup-audio-current">0:00</div>
+          <div class="video-player-progress">
+            <div class="video-player-fill" id="popup-audio-progress"></div>
+          </div>
+          <div class="video-player-time" id="popup-audio-duration">0:00</div>
+        </div>
+        <div class="video-player-buttons">
+          <button id="popup-audio-play" class="video-player-btn" type="button" aria-label="Play">▶</button>
+          <button id="popup-audio-pause" class="video-player-btn" type="button" aria-label="Pause" hidden>⏸</button>
+          <button id="popup-audio-volume" class="video-player-btn" type="button" aria-label="Mute">🔊</button>
+          <button id="popup-audio-close" class="video-player-btn video-player-close" type="button" aria-label="Close">✕</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="audio-recorder" class="audio-recorder-overlay" role="dialog" aria-modal="true" aria-label="Audio recorder" tabindex="-1" hidden>
+    <div class="audio-recorder-popup">
+      <header class="audio-recorder-head">
+        <h2>RECORD AUDIO</h2>
+        <button id="audio-recorder-close" class="icon-x" type="button" aria-label="Close recorder">✕</button>
+      </header>
+      <div class="audio-recorder-body">
+        <div class="audio-recorder-timeline">
+          <div class="audio-recorder-axis" id="recorder-axis"></div>
+          <div class="audio-recorder-track" id="recorder-track"></div>
+          <div class="audio-recorder-time" id="recorder-time">0:00 / 0:00</div>
+        </div>
+        <canvas id="recorder-viz" class="recorder-viz" width="640" height="80"></canvas>
+      </div>
+      <div class="audio-recorder-foot">
+        <button id="recorder-toggle" class="recorder-btn recorder-btn-ready" type="button" aria-label="Start recording">
+          <span class="recorder-btn-icon">●</span>
+          <span class="recorder-btn-label">START RECORDING</span>
+        </button>
+        <button id="recorder-save" class="btn btn-primary" type="button" hidden>SAVE</button>
       </div>
     </div>
   </div>
